@@ -656,6 +656,9 @@ std::unique_ptr<TargetInfo> AllocateTarget(const llvm::Triple &Triple,
     case llvm::Triple::FreeBSD:
       return std::make_unique<FreeBSDTargetInfo<X86_64TargetInfo>>(Triple,
                                                                    Opts);
+    case llvm::Triple::OxideBSD:
+      return std::make_unique<OxideBSDTargetInfo<X86_64TargetInfo>>(Triple,
+                                                                    Opts);
     case llvm::Triple::Fuchsia:
       return std::make_unique<FuchsiaTargetInfo<X86_64TargetInfo>>(Triple,
                                                                    Opts);

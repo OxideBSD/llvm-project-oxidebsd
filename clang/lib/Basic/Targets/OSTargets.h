@@ -423,6 +423,40 @@ public:
   }
 };
 
+// OxideBSD Target: a from-scratch Rust kernel with a real, patched musl port.
+// Genuine `oxidebsd` OS identity (not a borrowed Linux one), but its on-disk
+// ELF/CRT/dynamic-linker layout is musl/Linux-shaped, so predefined macros
+// mirror LinuxTargetInfo's rather than a real BSD's - this matches what its
+// vendored musl headers already assume (confirmed by its existing TinyCC
+// port, which predefines the same __linux__/__linux/__unix__ trio for the
+// same reason). See also OxideBSDToolChain (Driver/ToolChains/OxideBSD.h).
+template <typename Target>
+class LLVM_LIBRARY_VISIBILITY OxideBSDTargetInfo : public OSTargetInfo<Target> {
+protected:
+  void getOSDefines(const LangOptions &Opts, const llvm::Triple &Triple,
+                    MacroBuilder &Builder) const override {
+    DefineStd(Builder, "unix", Opts);
+    DefineStd(Builder, "linux", Opts);
+    Builder.defineMacro("__gnu_linux__");
+    Builder.defineMacro("__OxideBSD__");
+    Builder.defineMacro("__oxidebsd__");
+    if (Opts.POSIXThreads)
+      Builder.defineMacro("_REENTRANT");
+    if (Opts.CPlusPlus)
+      Builder.defineMacro("_GNU_SOURCE");
+  }
+
+public:
+  OxideBSDTargetInfo(const llvm::Triple &Triple, const TargetOptions &Opts)
+      : OSTargetInfo<Target>(Triple, Opts) {
+    this->WIntType = TargetInfo::UnsignedInt;
+  }
+
+  const char *getStaticInitSectionSpecifier() const override {
+    return ".text.startup";
+  }
+};
+
 // Managarm Target
 template <typename Target>
 class LLVM_LIBRARY_VISIBILITY ManagarmTargetInfo : public OSTargetInfo<Target> {

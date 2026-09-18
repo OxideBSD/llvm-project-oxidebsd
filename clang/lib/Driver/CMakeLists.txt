@@ -84,6 +84,7 @@ add_clang_library(clangDriver
   ToolChains/NetBSD.cpp
   ToolChains/OHOS.cpp
   ToolChains/OpenBSD.cpp
+  ToolChains/OxideBSD.cpp
   ToolChains/PS4CPU.cpp
   ToolChains/Serenity.cpp
   ToolChains/Solaris.cpp

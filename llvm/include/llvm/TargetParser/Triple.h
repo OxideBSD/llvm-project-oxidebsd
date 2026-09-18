@@ -347,7 +347,8 @@ public:
     Firmware,
     QURT,
     H2,
-    LastOSType = H2
+    OxideBSD,
+    LastOSType = OxideBSD
   };
   enum EnvironmentType {
     UnknownEnvironment,
@@ -741,6 +742,14 @@ public:
   bool isOSNetBSD() const { return getOS() == Triple::NetBSD; }
 
   bool isOSOpenBSD() const { return getOS() == Triple::OpenBSD; }
+
+  /// OxideBSD: a from-scratch Rust kernel with a real, patched musl port.
+  /// Deliberately does not participate in isOSFreeBSD()/NetBSD/OpenBSD-style
+  /// "real BSD ABI" assumptions scattered elsewhere in LLVM/Clang codegen -
+  /// its on-disk ELF/CRT/dynamic-linker conventions are musl/Linux-shaped
+  /// (see the OxideBSD Driver ToolChain), even though its own OS identity is
+  /// genuine, not borrowed.
+  bool isOSOxideBSD() const { return getOS() == Triple::OxideBSD; }
 
   bool isOSFreeBSD() const { return getOS() == Triple::FreeBSD; }
 

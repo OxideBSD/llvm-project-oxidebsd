@@ -289,9 +289,14 @@ void tools::gnutools::Linker::ConstructJob(Compilation &C, const JobAction &JA,
   const bool IsVE = ToolChain.getTriple().isVE();
   const bool IsStaticPIE = getStaticPIE(Args, ToolChain);
   const bool IsStatic = getStatic(Args);
+  // OxideBSD's musl port, like TinyCC's existing working port to it, never
+  // uses GCC's crtbegin/crtend convention (no libgcc-style constructor
+  // section wrapping) - matches how a real musl-only target has no need for
+  // it, same shape as the pre-existing Mips exception below.
   const bool HasCRTBeginEndFiles =
-      ToolChain.getTriple().hasEnvironment() ||
-      (ToolChain.getTriple().getVendor() != llvm::Triple::MipsTechnologies);
+      !ToolChain.getTriple().isOSOxideBSD() &&
+      (ToolChain.getTriple().hasEnvironment() ||
+       (ToolChain.getTriple().getVendor() != llvm::Triple::MipsTechnologies));
 
   ArgStringList CmdArgs;
 
