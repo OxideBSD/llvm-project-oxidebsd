@@ -26,10 +26,27 @@ using namespace llvm::opt;
 // otherwise mirrors. (The "/usr/include", "/usr/lib" paths documented in
 // OxideBSD's own CLAUDE.md are the *on-target* oxfs seed layout, a distinct,
 // later concern from this host-side cross-compiler's sysroot.)
+//
+// That "later concern" arrived: found live via the real on-target Clang/LLVM
+// port's own smoke test, once `ld.lld` itself could actually be launched (see
+// this fork's own musl commit fixing `posix_spawn()`'s vfork-via-clone path).
+// A `--sysroot=` is never passed for an on-target invocation (there's nothing
+// to point it at -- oxfs's own root *is* the sysroot), so `D.SysRoot` is
+// empty at runtime and `GetFilePath("crt1.o")` only ever checked `/lib`,
+// which doesn't exist in oxfs's own seed layout -- crt1.o/crti.o/crtn.o/
+// libc.a all live under `/usr/lib` there (see CLAUDE.md's TinyCC section).
+// `GetFilePath` silently returns the bare, unresolved filename on a miss
+// (real Clang behavior, not a bug in that function), which is exactly what
+// left `gnutools::Linker` invoking `ld.lld` with a plain "crt1.o" it could
+// never open. Registering both search dirs keeps this constructor correct
+// for the host-side cross-compile sysroot layout (`/lib`) *and* the on-target
+// oxfs layout (`/usr/lib`) at once, since exactly one of the two will
+// actually exist and matter for any single invocation of this same binary.
 OxideBSD::OxideBSD(const Driver &D, const llvm::Triple &Triple,
                     const ArgList &Args)
     : Generic_ELF(D, Triple, Args) {
   getFilePaths().push_back(concat(getDriver().SysRoot, "/lib"));
+  getFilePaths().push_back(concat(getDriver().SysRoot, "/usr/lib"));
 }
 
 void OxideBSD::AddClangSystemIncludeArgs(const ArgList &DriverArgs,
