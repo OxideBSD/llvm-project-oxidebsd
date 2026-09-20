@@ -11,5 +11,6 @@ the same reason.
 
 Base import: upstream `llvmorg-23.1.1`, as a single squashed commit on `main`.
 OxideBSD-specific patches (real `Triple::OxideBSD`, a Clang toolchain driver, etc.) live on
-the `oxidebsd` branch, following the same pin/update convention as `third_party/musl` and
-`third_party/tinycc` in the main OxideBSD repo.
+the `oxidebsd` branch, following the same pin/update convention as `external/mit/musl` in the
+main OxideBSD repo (this submodule itself lives at `external/apache2/llvm` there, not
+`third_party/llvm-project` -- the whole tree was reorganized into a real BSD-style layout).
