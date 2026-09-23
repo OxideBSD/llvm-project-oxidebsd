@@ -62,6 +62,9 @@ public:
   }
 
 protected:
+  void addLibCxxIncludePaths(const llvm::opt::ArgList &DriverArgs,
+                             llvm::opt::ArgStringList &CC1Args) const override;
+
   Tool *buildAssembler() const override;
   Tool *buildLinker() const override;
   Tool *buildStaticLibTool() const override;

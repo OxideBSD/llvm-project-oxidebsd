@@ -42,6 +42,14 @@ using namespace llvm::opt;
 // for the host-side cross-compile sysroot layout (`/lib`) *and* the on-target
 // oxfs layout (`/usr/lib`) at once, since exactly one of the two will
 // actually exist and matter for any single invocation of this same binary.
+//
+// Correction, found later by the first on-target clang++ run: the empty
+// on-target `D.SysRoot` above was never by design -- OxideBSD's build.rs
+// passed `-DCLANG_DEFAULT_SYSROOT=/usr`, which isn't a real cmake variable
+// (the real one is `DEFAULT_SYSROOT`). With that fixed, SysRoot is `/usr`
+// on-target and the `SysRoot + "/lib"` entry alone resolves to `/usr/lib`;
+// the second entry stays harmless and covers any build without a default
+// sysroot.
 OxideBSD::OxideBSD(const Driver &D, const llvm::Triple &Triple,
                     const ArgList &Args)
     : Generic_ELF(D, Triple, Args) {
@@ -67,6 +75,45 @@ void OxideBSD::AddClangSystemIncludeArgs(const ArgList &DriverArgs,
 
   addExternCSystemInclude(DriverArgs, CC1Args,
                           concat(D.SysRoot, "/include"));
+}
+
+// libc++'s headers live at <sysroot>/include/c++/v1 on-target (sysroot is
+// DEFAULT_SYSROOT=/usr, so /usr/include/c++/v1 -- exactly FreeBSD's own
+// layout), with the per-triple __config_site under
+// <sysroot>/include/<triple>/c++/v1. Generic_GCC's own search never finds
+// that: it tries <bindir>/../include (/include on-target -- doesn't exist),
+// then <sysroot>/usr/local/include and <sysroot>/usr/include, which with a
+// /usr sysroot are the nonsense /usr/usr/... paths. The <bindir>/../include
+// probe is kept first, unchanged, because that's how the *host-side* cross
+// compiler (target/llvm-host-build) finds its own freshly built libc++
+// headers while building the target runtimes and the on-target clang itself.
+void OxideBSD::addLibCxxIncludePaths(const ArgList &DriverArgs,
+                                     ArgStringList &CC1Args) const {
+  const Driver &D = getDriver();
+
+  auto AddIncludePath = [&](StringRef Base) {
+    std::string Version = detectLibcxxVersion(Base);
+    if (Version.empty())
+      return false;
+    // Per-target dir first (__config_site), then the generic header tree --
+    // same order Generic_GCC::addLibCxxIncludePaths uses.
+    if (std::optional<std::string> TargetDir = getTargetSubDirPath(Base)) {
+      SmallString<128> Dir(*TargetDir);
+      llvm::sys::path::append(Dir, "c++", Version);
+      if (D.getVFS().exists(Dir))
+        addSystemInclude(DriverArgs, CC1Args, Dir);
+    }
+    SmallString<128> Dir(Base);
+    llvm::sys::path::append(Dir, "c++", Version);
+    addSystemInclude(DriverArgs, CC1Args, Dir);
+    return true;
+  };
+
+  SmallString<128> DriverIncludeDir(D.Dir);
+  llvm::sys::path::append(DriverIncludeDir, "..", "include");
+  if (AddIncludePath(DriverIncludeDir))
+    return;
+  AddIncludePath(concat(D.SysRoot, "/include"));
 }
 
 std::string OxideBSD::getDynamicLinker(const ArgList &Args) const {
