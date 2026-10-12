@@ -2414,8 +2414,12 @@ SmallVector<std::unique_ptr<PhdrEntry>, 0> Writer<ELFT>::createPhdrs() {
   // is expected to perform W^X violations, such as calling mprotect(2) or
   // mmap(2) with PROT_WRITE | PROT_EXEC, which is prohibited by default on
   // OpenBSD.
+  //
+  // OxideBSD has its own type for the same marker (its program header types are 0x6f78xxxx,
+  // "ox"; see the OxideBSD kernel's sys/process/elf.rs).
+  constexpr uint32_t PT_OXIDEBSD_WXNEEDED = 0x6f780001;
   if (ctx.arg.zWxneeded)
-    addHdr(PT_OPENBSD_WXNEEDED, PF_X);
+    addHdr(ctx.arg.isOxideBSD ? PT_OXIDEBSD_WXNEEDED : PT_OPENBSD_WXNEEDED, PF_X);
 
   if (OutputSection *cmd = findSection(ctx, ".note.gnu.property"))
     addHdr(PT_GNU_PROPERTY, PF_R)->add(cmd);

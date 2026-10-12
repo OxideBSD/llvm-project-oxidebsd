@@ -656,6 +656,10 @@ const char *tools::getLDMOption(const llvm::Triple &T, const ArgList &Args) {
   case llvm::Triple::x86_64:
     if (T.isX32())
       return "elf32_x86_64";
+    // OxideBSD's own lld emulation: plain elf_x86_64 plus OxideBSD's program header types
+    // (`-z wxneeded` emits PT_OXIDEBSD_WXNEEDED).
+    if (T.isOSOxideBSD())
+      return "elf_x86_64_oxidebsd";
     return "elf_x86_64";
   case llvm::Triple::ve:
     return "elf64ve";

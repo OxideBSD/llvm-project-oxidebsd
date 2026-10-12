@@ -245,6 +245,8 @@ public:
 // Most fields are initialized by the ctx.driver.
 struct Config {
   uint8_t osabi = 0;
+  // Linking for OxideBSD (`-m elf_x86_64_oxidebsd`): OxideBSD's own program header types.
+  bool isOxideBSD = false;
   uint32_t andFeatures = 0;
   llvm::CachePruningPolicy thinLTOCachePolicy;
   llvm::SetVector<llvm::CachedHashString> dependencyFiles; // for --dependency-file

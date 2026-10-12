@@ -150,6 +150,9 @@ static std::tuple<ELFKind, uint16_t, uint8_t> parseEmulation(Ctx &ctx,
     s = s.drop_back(5);
     osabi = ELFOSABI_FREEBSD;
   }
+  // OxideBSD keeps ELFOSABI_NONE (it runs SysV-ABI objects) but has its own program headers.
+  if (s.consume_back("_oxidebsd"))
+    ctx.arg.isOxideBSD = true;
 
   std::pair<ELFKind, uint16_t> ret =
       StringSwitch<std::pair<ELFKind, uint16_t>>(s)
